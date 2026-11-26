@@ -1,7 +1,6 @@
-
 package com.example.vitairos_m.validation
 
-import android.util.Patterns
+import androidx.core.util.PatternsCompat
 
 object PerfilValidator {
 
@@ -22,7 +21,7 @@ object PerfilValidator {
             correo.isBlank() ->
                 "Debes ingresar tu correo electrónico"
 
-            !Patterns.EMAIL_ADDRESS.matcher(correo.trim()).matches() ->
+            !PatternsCompat.EMAIL_ADDRESS.matcher(correo.trim()).matches() ->
                 "Ingresa un correo electrónico válido"
 
             else -> null

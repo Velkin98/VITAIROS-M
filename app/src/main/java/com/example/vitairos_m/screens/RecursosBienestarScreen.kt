@@ -1,6 +1,7 @@
-
 package com.example.vitairos_m.screens
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -11,8 +12,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+
+import com.example.vitairos_m.network.FraseRetrofitClient
+import kotlinx.coroutines.CancellationException
 
 @Composable
 fun RecursosBienestarScreen(
@@ -23,8 +28,61 @@ fun RecursosBienestarScreen(
     val verde = Color(0xFF00C98E)
     val fondo = Color(0xFFF2F8FB)
 
+    val context = LocalContext.current
+
     var recursoSeleccionado by remember {
         mutableStateOf("")
+    }
+
+    // Estados de la API externa
+    var frase by remember {
+        mutableStateOf("")
+    }
+
+    var autor by remember {
+        mutableStateOf("")
+    }
+
+    var cargando by remember {
+        mutableStateOf(true)
+    }
+
+    var errorApi by remember {
+        mutableStateOf(false)
+    }
+
+    // Consumimos la API externa mediante Retrofit
+    LaunchedEffect(Unit) {
+
+        try {
+
+            val respuesta = FraseRetrofitClient
+                .fraseApi
+                .obtenerFrase()
+                .firstOrNull()
+
+            if (respuesta != null) {
+
+                frase = respuesta.frase
+                autor = respuesta.autor
+
+            } else {
+
+                errorApi = true
+            }
+
+        } catch (e: CancellationException) {
+
+            throw e
+
+        } catch (e: Exception) {
+
+            errorApi = true
+
+        } finally {
+
+            cargando = false
+        }
     }
 
     val recursos = listOf(
@@ -142,5 +200,97 @@ fun RecursosBienestarScreen(
                 }
             }
         }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Información obtenida desde la API externa
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White
+            )
+        ) {
+
+            Column(
+                modifier = Modifier.padding(20.dp)
+            ) {
+
+                Text(
+                    text = "Frase motivacional",
+                    fontSize = 20.sp,
+                    color = azul
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                when {
+
+                    cargando -> {
+
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(28.dp),
+                            color = verde
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = "Cargando frase...",
+                            color = azul
+                        )
+                    }
+
+                    errorApi -> {
+
+                        Text(
+                            text = "No se pudo obtener la frase. Verifica tu conexión a Internet.",
+                            color = Color.Red,
+                            fontSize = 14.sp
+                        )
+                    }
+
+                    else -> {
+
+                        Text(
+                            text = "\"$frase\"",
+                            fontSize = 16.sp,
+                            color = azul
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Text(
+                            text = "— $autor",
+                            fontSize = 14.sp,
+                            color = azul
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                TextButton(
+                    onClick = {
+
+                        val intent = Intent(
+                            Intent.ACTION_VIEW,
+                            Uri.parse("https://zenquotes.io/")
+                        )
+
+                        context.startActivity(intent)
+                    }
+                ) {
+
+                    Text(
+                        text = "Inspirational quotes provided by ZenQuotes API",
+                        fontSize = 12.sp,
+                        color = azul
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
     }
 }

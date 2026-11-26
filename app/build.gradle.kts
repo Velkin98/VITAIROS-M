@@ -6,6 +6,7 @@ plugins {
 
 android {
     namespace = "com.example.vitairos_m"
+
     compileSdk {
         version = release(37)
     }
@@ -13,7 +14,7 @@ android {
     defaultConfig {
         applicationId = "com.example.vitairos_m"
         minSdk = 26
-        targetSdk = 37
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
@@ -21,17 +22,28 @@ android {
     }
 
     buildTypes {
+
+        debug {
+            enableUnitTestCoverage = true
+        }
+
         release {
             optimization {
                 enable = true
-                packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
+                packageScope = setOf(
+                    "androidx.**",
+                    "kotlin.**",
+                    "kotlinx.**"
+                )
             }
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
     buildFeatures {
         compose = true
     }
@@ -39,9 +51,15 @@ android {
 
 dependencies {
 
+    // Retrofit - Conexion con microservicios
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+
+    // Room
     implementation("androidx.room:room-runtime:2.8.4")
     implementation("androidx.room:room-ktx:2.8.4")
     ksp("androidx.room:room-compiler:2.8.4")
+
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.4")
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
@@ -51,11 +69,21 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+
+    // Pruebas unitarias
+    // Pruebas unitarias
     testImplementation(libs.junit)
+    testImplementation("io.mockk:mockk:1.14.5")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+    testImplementation("net.bytebuddy:byte-buddy:1.17.8")
+    testImplementation("net.bytebuddy:byte-buddy-agent:1.17.8")
+
+    // Pruebas instrumentadas
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
+
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }

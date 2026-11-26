@@ -1,57 +1,46 @@
-
 package com.example.vitairos_m.viewmodel
 
 import android.app.Application
+import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.room.Room
-
-import com.example.vitairos_m.data.EmocionDatabase
-import com.example.vitairos_m.data.MIGRATION_1_2
-import com.example.vitairos_m.data.MIGRATION_2_3
-import com.example.vitairos_m.data.MIGRATION_3_4
 import com.example.vitairos_m.model.Emocion
-
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.stateIn
+import com.example.vitairos_m.network.RetrofitClient
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class EmocionViewModel(
     application: Application
 ) : AndroidViewModel(application) {
 
-    // Conexión con nuestra base de datos Room
-    private val database = Room.databaseBuilder(
-        application,
-        EmocionDatabase::class.java,
-        "vitairos_database"
-    )
-        .addMigrations(
-            MIGRATION_1_2,
-            MIGRATION_2_3,
-            MIGRATION_3_4
-        )
-        .build()
+    // Conexion con el microservicio
+    private val api = RetrofitClient.emocionApi
 
-    // Acceso a las operaciones de la base de datos
-    private val emocionDao = database.emocionDao()
+    // Lista de emociones
+    private val _emociones = MutableStateFlow<List<Emocion>>(emptyList())
+    val emociones = _emociones.asStateFlow()
 
-    // Lista de emociones guardadas
-    val emociones = emocionDao.obtenerEmociones()
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+    init {
+        cargarEmociones()
+    }
 
-    // Guarda una nueva emoción
+    // Obtener emociones desde Spring Boot
+    fun cargarEmociones() {
+        ejecutarOperacion {
+            _emociones.value = api.listarEmociones()
+        }
+    }
+
+    // Guardar una nueva emocion
     fun guardarEmocion(
         nombre: String,
         categoria: String? = null,
         energia: Int? = null,
         nota: String? = null
     ) {
-        viewModelScope.launch {
+        ejecutarOperacion {
 
             val nuevaEmocion = Emocion(
                 nombre = nombre,
@@ -60,11 +49,12 @@ class EmocionViewModel(
                 nota = nota
             )
 
-            emocionDao.guardarEmocion(nuevaEmocion)
+            api.guardarEmocion(nuevaEmocion)
+            _emociones.value = api.listarEmociones()
         }
     }
 
-    // Edita todos los datos de una emoción registrada
+    // Actualizar una emocion
     fun actualizarEmocion(
         emocion: Emocion,
         nuevoNombre: String,
@@ -72,7 +62,7 @@ class EmocionViewModel(
         nuevaEnergia: Int? = emocion.energia,
         nuevaNota: String? = emocion.nota
     ) {
-        viewModelScope.launch {
+        ejecutarOperacion {
 
             val emocionActualizada = emocion.copy(
                 nombre = nuevoNombre,
@@ -81,15 +71,45 @@ class EmocionViewModel(
                 nota = nuevaNota
             )
 
-            emocionDao.actualizarEmocion(emocionActualizada)
+            api.actualizarEmocion(
+                emocion.id,
+                emocionActualizada
+            )
+
+            _emociones.value = api.listarEmociones()
         }
     }
 
-    // Elimina una emoción registrada
+    // Eliminar una emocion
     fun eliminarEmocion(emocion: Emocion) {
-        viewModelScope.launch {
+        ejecutarOperacion {
 
-            emocionDao.eliminarEmocion(emocion)
+            val respuesta = api.eliminarEmocion(emocion.id)
+
+            if (!respuesta.isSuccessful) {
+                throw retrofit2.HttpException(respuesta)
+            }
+
+            _emociones.value = api.listarEmociones()
+        }
+    }
+
+    // Manejo de errores de conexion
+    private fun ejecutarOperacion(
+        operacion: suspend () -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                operacion()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Toast.makeText(
+                    getApplication<Application>(),
+                    "Error de comunicacion: ${e.message}",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
         }
     }
 }

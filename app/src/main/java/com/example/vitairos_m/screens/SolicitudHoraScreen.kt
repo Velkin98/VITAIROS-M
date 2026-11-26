@@ -1,4 +1,3 @@
-
 package com.example.vitairos_m.screens
 
 import android.app.DatePickerDialog
@@ -266,14 +265,15 @@ fun SolicitudHoraScreen(
                 fechaConfirmada = fechaSeleccionada
                 horaConfirmada = horaSeleccionada
 
-                // Guardamos la solicitud en Room
+                // Guardamos la solicitud en el microservicio
                 solicitudHoraViewModel.guardarSolicitud(
                     profesional = profesionalSeleccionado,
                     fecha = fechaSeleccionada,
-                    hora = horaSeleccionada
+                    hora = horaSeleccionada,
+                    onSuccess = {
+                        mostrarConfirmacion = true
+                    }
                 )
-
-                mostrarConfirmacion = true
 
             },
             enabled =
@@ -294,7 +294,7 @@ fun SolicitudHoraScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // NUEVO BOTÓN: Ver historial de solicitudes
+        // Ver historial de solicitudes
         OutlinedButton(
             onClick = onVerSolicitudes,
             modifier = Modifier.fillMaxWidth(),
@@ -330,8 +330,8 @@ fun SolicitudHoraScreen(
             },
             text = {
                 Text(
-                    "Se ha enviado tu solicitud de prueba " +
-                            "para guardarla en el dispositivo.\n\n" +
+                    "Tu solicitud de prueba se ha guardado " +
+                            "correctamente en el microservicio.\n\n" +
                             "Profesional: $profesionalConfirmado\n" +
                             "Fecha: $fechaConfirmada\n" +
                             "Hora: $horaConfirmada\n\n" +

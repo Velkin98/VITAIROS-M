@@ -1,57 +1,47 @@
-
 package com.example.vitairos_m.viewmodel
 
 import android.app.Application
+import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.room.Room
-
-import com.example.vitairos_m.data.EmocionDatabase
-import com.example.vitairos_m.data.MIGRATION_1_2
-import com.example.vitairos_m.data.MIGRATION_2_3
-import com.example.vitairos_m.data.MIGRATION_3_4
 import com.example.vitairos_m.model.SolicitudHora
-
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.stateIn
+import com.example.vitairos_m.network.RetrofitClient
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
 
 class SolicitudHoraViewModel(
     application: Application
 ) : AndroidViewModel(application) {
 
-    // Conexión con nuestra base de datos Room
-    private val database = Room.databaseBuilder(
-        application,
-        EmocionDatabase::class.java,
-        "vitairos_database"
-    )
-        .addMigrations(
-            MIGRATION_1_2,
-            MIGRATION_2_3,
-            MIGRATION_3_4
-        )
-        .build()
+    private val api = RetrofitClient.solicitudHoraApi
 
-    // Acceso a la tabla de solicitudes
-    private val solicitudHoraDao = database.solicitudHoraDao()
+    private val _solicitudes =
+        MutableStateFlow<List<SolicitudHora>>(emptyList())
 
-    // Recuperamos las solicitudes guardadas
-    val solicitudes = solicitudHoraDao.obtenerSolicitudes()
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+    val solicitudes = _solicitudes.asStateFlow()
 
-    // Guarda una solicitud de atención simulada
+    init {
+        cargarSolicitudes()
+    }
+
+    // READ: Obtener solicitudes
+    fun cargarSolicitudes() {
+        ejecutarOperacion {
+            _solicitudes.value = api.listarSolicitudes()
+        }
+    }
+
+    // CREATE: Guardar solicitud
     fun guardarSolicitud(
         profesional: String,
         fecha: String,
-        hora: String
+        hora: String,
+        onSuccess: () -> Unit = {}
     ) {
-
-        viewModelScope.launch {
+        ejecutarOperacion {
 
             val nuevaSolicitud = SolicitudHora(
                 profesional = profesional,
@@ -59,16 +49,73 @@ class SolicitudHoraViewModel(
                 hora = hora
             )
 
-            solicitudHoraDao.guardarSolicitud(nuevaSolicitud)
+            val guardada = api.guardarSolicitud(nuevaSolicitud)
+
+            _solicitudes.value = _solicitudes.value + guardada
+
+            onSuccess()
         }
     }
 
-    // Elimina una solicitud guardada
+    // UPDATE: Actualizar solicitud
+    fun actualizarSolicitud(
+        solicitud: SolicitudHora,
+        profesional: String,
+        fecha: String,
+        hora: String
+    ) {
+        ejecutarOperacion {
+
+            val solicitudActualizada = solicitud.copy(
+                profesional = profesional,
+                fecha = fecha,
+                hora = hora
+            )
+
+            api.actualizarSolicitud(
+                solicitud.id,
+                solicitudActualizada
+            )
+
+            _solicitudes.value = api.listarSolicitudes()
+        }
+    }
+
+    // DELETE: Eliminar solicitud
     fun eliminarSolicitud(solicitud: SolicitudHora) {
+        ejecutarOperacion {
 
+            val respuesta = api.eliminarSolicitud(solicitud.id)
+
+            if (!respuesta.isSuccessful) {
+                throw HttpException(respuesta)
+            }
+
+            _solicitudes.value = api.listarSolicitudes()
+        }
+    }
+
+    // Manejo de errores de comunicación
+    private fun ejecutarOperacion(
+        operacion: suspend () -> Unit
+    ) {
         viewModelScope.launch {
+            try {
 
-            solicitudHoraDao.eliminarSolicitud(solicitud)
+                operacion()
+
+            } catch (e: CancellationException) {
+
+                throw e
+
+            } catch (e: Exception) {
+
+                Toast.makeText(
+                    getApplication<Application>(),
+                    "Error de comunicación: ${e.message}",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
         }
     }
 }

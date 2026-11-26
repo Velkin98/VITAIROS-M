@@ -1,16 +1,12 @@
 
 package com.example.vitairos_m
-
 import android.os.Bundle
-
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.compose.BackHandler
 import androidx.activity.enableEdgeToEdge
-
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 import com.example.vitairos_m.screens.BienvenidaScreen
