@@ -8,6 +8,13 @@
 **Rama:** evaluacion-4  
 **Versión:** 1.0
 
+## Integrantes del equipo
+
+- Luciano Campos.
+- Daniel Saa.
+
+**Cantidad de integrantes:** 2.
+
 ## 1. Descripción del proyecto
 
 VITAIROS-M es una aplicación móvil de bienestar emocional
