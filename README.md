@@ -379,3 +379,45 @@ validación de datos y control de versiones.
 ---
 
 VITAIROS-M | Duoc UC | Evaluación Parcial 4 | 2026
+
+## Evidencias de la Evaluación 4
+
+### APK firmado
+![APK firmado](evidencias/01-apk-firmado.png)
+
+### APK funcionando
+![APK funcionando](evidencias/02-apk-funcionando.png)
+
+### API externa ZenQuotes
+
+- Endpoint: https://zenquotes.io/api/random
+- Método: GET.
+- Cliente HTTP: Retrofit.
+
+![API externa](evidencias/03-api-externa.png)
+
+### Repositorio GitHub
+![Repositorio](evidencias/04-repositorio-github.png)
+
+### Cobertura de código
+
+- ViewModels: 83% de cobertura de instrucciones.
+- Validadores: 100% de cobertura de instrucciones.
+- Cobertura global: 6%.
+
+![Cobertura](evidencias/05-cobertura.png)
+
+### Pruebas unitarias
+
+- Total: 59 pruebas.
+- Aprobadas: 59.
+- Fallidas: 0.
+- Tasa de éxito: 100%.
+
+![Pruebas unitarias](evidencias/06-pruebas-unitarias.png)
+
+### Configuración de firma
+![Configuración](evidencias/07-configuracion-firma.png)
+
+### Llave de firma JKS
+![Llave JKS](evidencias/08-llave-jks.png)
